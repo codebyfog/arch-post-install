@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "==> 1. Atualizando repositórios e sistema..."
 sudo pacman -Syu --noconfirm
@@ -42,26 +44,49 @@ sudo pacman -S --needed \
     mise \
     helix
 
-echo "==> 3. Aplicando tema adw-gtk-theme..."
+echo "==> 3. Aplicando tema adw-gtk-theme e wallpapers..."
 gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
-echo "==> 4. Habilitando mise..."
-echo 'eval "$(mise activate bash)"' >> ~/.bashrc
+wallpapers_src="$script_dir/Wallpapers"
+wallpapers_dst="$HOME/Wallpapers"
+
+if [ -d "$wallpapers_src" ]; then
+    mkdir -p "$wallpapers_dst"
+    cp -r "$wallpapers_src/." "$wallpapers_dst/"
+
+    default_wp="$wallpapers_dst/01.jpg"
+    if [ -f "$default_wp" ]; then
+        gsettings set org.gnome.desktop.background picture-uri "file://$default_wp"
+        gsettings set org.gnome.desktop.background picture-uri-dark "file://$default_wp"
+        gsettings set org.gnome.desktop.background picture-options 'zoom'
+    fi
+fi
+
+echo "==> 4. Configurando mise e Helix..."
+grep -qxF 'eval "$(mise activate bash)"' "$HOME/.bashrc" || echo 'eval "$(mise activate bash)"' >> "$HOME/.bashrc"
+
+mkdir -p "$HOME/.config/helix"
+if [ ! -f "$HOME/.config/helix/config.toml" ]; then
+    cat << 'EOF' > "$HOME/.config/helix/config.toml"
+theme = "adwaita-dark"
+EOF
+fi
 
 echo "==> 5. Habilitando serviços essenciais (GDM e LACT)..."
 sudo systemctl enable gdm.service lactd.service
 
-echo "==> 6. Instalando dependências de compilação, firefox-gnome-theme, helix adwaita theme e paru..."
+echo "==> 6. Instalando dependências, firefox-gnome-theme e paru-bin..."
 sudo pacman -S --needed --noconfirm base-devel git
-tmpdir="$(mktemp -d)"
 
-# 1. Inicializa o Firefox brevemente para criar o perfil *.default-release
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+
+# Inicializa o Firefox brevemente para gerar o perfil *.default-release
 timeout 5s firefox --headless >/dev/null 2>&1 || true
 
 git clone --depth=1 https://github.com/rafaelmardojai/firefox-gnome-theme.git "$tmpdir/firefox-gnome-theme"
 
-# Detecta o diretório base do Firefox (~/.config/mozilla/firefox ou ~/.mozilla/firefox)
 ff_dir=""
 for dir in "$HOME/.config/mozilla/firefox" "$HOME/.mozilla/firefox"; do
     if [ -d "$dir" ]; then
@@ -70,8 +95,10 @@ for dir in "$HOME/.config/mozilla/firefox" "$HOME/.mozilla/firefox"; do
     fi
 done
 
-# Pega apenas o nome da pasta *.default-release
-profile_name="$(find "$ff_dir" -maxdepth 1 -type d -name "*.default-release" -printf "%f\n" 2>/dev/null | head -n 1)"
+profile_name=""
+if [ -n "$ff_dir" ]; then
+    profile_name="$(find "$ff_dir" -maxdepth 1 -type d -name "*.default-release" -printf "%f\n" 2>/dev/null | head -n 1)"
+fi
 
 if [ -n "$ff_dir" ] && [ -n "$profile_name" ]; then
     (cd "$tmpdir/firefox-gnome-theme" && ./scripts/install.sh -f "$ff_dir" -p "$profile_name")
@@ -81,24 +108,11 @@ else
     (cd "$tmpdir/firefox-gnome-theme" && ./scripts/install.sh)
 fi
 
-echo "==> Configurando Helix..."
-mkdir -p "$HOME/.config/helix"
-if [ ! -f "$HOME/.config/helix/config.toml" ]; then
-    cat << 'EOF' > "$HOME/.config/helix/config.toml"
-theme = "adwaita-dark"
-EOF
-fi
-
-# 2. Instala o paru-bin em seguida
 git clone https://aur.archlinux.org/paru-bin.git "$tmpdir/paru-bin"
 (cd "$tmpdir/paru-bin" && makepkg -si --noconfirm)
 
-# 3. Remove a pasta temporária com ambos os repositórios
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT
-
 echo "==> 7. Instalando pacotes do AUR (Vesktop)..."
 paru -S --needed \
-    vesktop-bin 
-    
+    vesktop-bin
+
 echo "==> Pós-instalação concluída! Pode reiniciar."
