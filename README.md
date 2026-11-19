@@ -33,6 +33,6 @@ Reinicie o sistema ao final.
 
 Leia o script antes de executar. Ele instala pacotes e habilita serviços no seu sistema. Para conferir o conteúdo, abra o link abaixo no navegador:
 
-    https://raw.githubusercontent.com/SEU-USUARIO/arch-post-install/main/install.sh
+    https://raw.githubusercontent.com/codebyfog/arch-post-install/main/install.sh
 
 Use por sua conta e risco.
