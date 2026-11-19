@@ -51,17 +51,23 @@ gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
 wallpapers_src="$script_dir/Wallpapers"
 wallpapers_dst="$HOME/Wallpapers"
+repo_raw="https://raw.githubusercontent.com/codebyfog/arch-post-install/main/Wallpapers"
+
+mkdir -p "$wallpapers_dst"
 
 if [ -d "$wallpapers_src" ]; then
-    mkdir -p "$wallpapers_dst"
     cp -r "$wallpapers_src/." "$wallpapers_dst/"
+else
+    for wp in 01.jpeg 02.jpeg 03.jpeg 04.jpeg 05.jpeg; do
+        curl -fsSL "$repo_raw/$wp" -o "$wallpapers_dst/$wp" || true
+    done
+fi
 
-    default_wp="$wallpapers_dst/01.jpeg"
-    if [ -f "$default_wp" ]; then
-        gsettings set org.gnome.desktop.background picture-uri "file://$default_wp"
-        gsettings set org.gnome.desktop.background picture-uri-dark "file://$default_wp"
-        gsettings set org.gnome.desktop.background picture-options 'zoom'
-    fi
+default_wp="$wallpapers_dst/01.jpeg"
+if [ -f "$default_wp" ]; then
+    gsettings set org.gnome.desktop.background picture-uri "file://$default_wp"
+    gsettings set org.gnome.desktop.background picture-uri-dark "file://$default_wp"
+    gsettings set org.gnome.desktop.background picture-options 'zoom'
 fi
 
 icons_dir="$HOME/.local/share/icons"
