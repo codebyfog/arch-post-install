@@ -55,13 +55,14 @@ if [ -d "$wallpapers_src" ]; then
     mkdir -p "$wallpapers_dst"
     cp -r "$wallpapers_src/." "$wallpapers_dst/"
 
-    default_wp="$wallpapers_dst/01.jpg"
+    default_wp="$wallpapers_dst/01.jpeg"
     if [ -f "$default_wp" ]; then
         gsettings set org.gnome.desktop.background picture-uri "file://$default_wp"
         gsettings set org.gnome.desktop.background picture-uri-dark "file://$default_wp"
         gsettings set org.gnome.desktop.background picture-options 'zoom'
     fi
 fi
+
 
 echo "==> 4. Configurando mise e Helix..."
 grep -qxF 'eval "$(mise activate bash)"' "$HOME/.bashrc" || echo 'eval "$(mise activate bash)"' >> "$HOME/.bashrc"
