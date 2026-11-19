@@ -47,16 +47,25 @@ gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
 echo "==> 4. Habilitando mise..."
-eval "$(mise activate bash)"
+echo 'eval "$(mise activate bash)"' >> ~/.bashrc
 
 echo "==> 5. Habilitando serviços essenciais (GDM e LACT)..."
 sudo systemctl enable gdm.service lactd.service
 
-echo "==> 6. Instalando o paru (AUR helper)..."
+echo "==> 6. Instalando dependências de compilação, firefox-gnome-theme e paru..."
 sudo pacman -S --needed --noconfirm base-devel git
 tmpdir="$(mktemp -d)"
+
+# 1. Cria o perfil headless do Firefox e instala o tema primeiro
+firefox --headless --CreateProfile default
+git clone --depth=1 https://github.com/rafaelmardojai/firefox-gnome-theme.git "$tmpdir/firefox-gnome-theme"
+(cd "$tmpdir/firefox-gnome-theme" && ./scripts/install.sh)
+
+# 2. Instala o paru-bin em seguida
 git clone https://aur.archlinux.org/paru-bin.git "$tmpdir/paru-bin"
 (cd "$tmpdir/paru-bin" && makepkg -si --noconfirm)
+
+# 3. Remove a pasta temporária com ambos os repositórios
 rm -rf "$tmpdir"
 
 echo "==> 7. Instalando pacotes do AUR (Vesktop)..."
