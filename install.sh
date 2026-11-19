@@ -38,24 +38,29 @@ sudo pacman -S --needed \
     eyedropper \
     lact \
     steam \
-    firefox
+    firefox \
+    mise \
+    helix
 
 echo "==> 3. Aplicando tema adw-gtk-theme..."
 gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
-echo "==> 4. Habilitando serviços essenciais (GDM e LACT)..."
+echo "==> 4. Habilitando mise..."
+eval "$(mise activate bash)"
+
+echo "==> 5. Habilitando serviços essenciais (GDM e LACT)..."
 sudo systemctl enable gdm.service lactd.service
 
-echo "==> Instalando o paru (AUR helper)..."
+echo "==> 6. Instalando o paru (AUR helper)..."
 sudo pacman -S --needed --noconfirm base-devel git
 tmpdir="$(mktemp -d)"
 git clone https://aur.archlinux.org/paru-bin.git "$tmpdir/paru-bin"
 (cd "$tmpdir/paru-bin" && makepkg -si --noconfirm)
 rm -rf "$tmpdir"
 
-echo "==> Instalando pacotes do AUR (Vesktop..."
+echo "==> 7. Instalando pacotes do AUR (Vesktop)..."
 paru -S --needed \
-    vesktop-bin \
-    mixtapes-bin
+    vesktop-bin 
+    
 echo "==> Pós-instalação concluída! Pode reiniciar."
