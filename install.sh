@@ -42,9 +42,10 @@ sudo pacman -S --needed \
     steam \
     firefox \
     mise \
-    helix
+    helix \
+    git
 
-echo "==> 3. Aplicando tema adw-gtk-theme e wallpapers..."
+echo "==> 3. Aplicando tema adw-gtk-theme, neuwaita e wallpapers..."
 gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
@@ -63,6 +64,16 @@ if [ -d "$wallpapers_src" ]; then
     fi
 fi
 
+icons_dir="$HOME/.local/share/icons"
+neuwaita_dst="$icons_dir/Neuwaita"
+
+mkdir -p "$icons_dir"
+if [ ! -d "$neuwaita_dst" ]; then
+    git clone --depth=1 https://github.com/xydani/Neuwaita.git "$neuwaita_dst"
+    rm -rf "$neuwaita_dst/.git"
+fi
+
+gsettings set org.gnome.desktop.interface icon-theme 'Neuwaita'
 
 echo "==> 4. Configurando mise e Helix..."
 grep -qxF 'eval "$(mise activate bash)"' "$HOME/.bashrc" || echo 'eval "$(mise activate bash)"' >> "$HOME/.bashrc"
@@ -78,7 +89,7 @@ echo "==> 5. Habilitando serviços essenciais (GDM e LACT)..."
 sudo systemctl enable gdm.service lactd.service
 
 echo "==> 6. Instalando dependências, firefox-gnome-theme e paru-bin..."
-sudo pacman -S --needed --noconfirm base-devel git
+sudo pacman -S --needed --noconfirm base-devel
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
